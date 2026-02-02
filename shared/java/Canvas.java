@@ -559,13 +559,79 @@ public class Canvas extends Managed {
     @NotNull @Contract("_, _, _ -> this")
     public Canvas drawPicture(@NotNull Picture picture, @Nullable Matrix33 matrix, @Nullable Paint paint) {
         assert _ptr != 0 : "Canvas is closed";
-        assert picture != null : "Can’t drawPicture with picture == null";
+        assert picture != null : "Can't drawPicture with picture == null";
         Stats.onNativeCall();
         _nDrawPicture(_ptr, Native.getPtr(picture), matrix == null ? null : matrix._mat, Native.getPtr(paint));
         ReferenceUtil.reachabilityFence(picture);
         ReferenceUtil.reachabilityFence(paint);
         return this;
-    }   
+    }
+
+    /**
+     * Draws a set of sprites from an atlas image using clip and Matrix.
+     *
+     * <p>RSXform array xforms encodes rotation, scale, and translation for each sprite.
+     * Each RSXform is 4 floats: [scos, ssin, tx, ty] representing the matrix:</p>
+     * <pre>
+     *   [ scos  -ssin  tx ]
+     *   [ ssin   scos  ty ]
+     * </pre>
+     * <p>where scos = scale * cos(rotation), ssin = scale * sin(rotation).</p>
+     *
+     * <p>Rect array tex specifies the source rectangle within the atlas for each sprite.</p>
+     *
+     * <p>Optional colors array tints each sprite. When present, colors are blended with
+     * the atlas image using the specified BlendMode.</p>
+     *
+     * @param atlas     source image containing all sprites
+     * @param xforms    RSXform array, 4 floats per sprite [scos, ssin, tx, ty]
+     * @param tex       source rectangles within atlas, 4 floats per sprite [l, t, r, b]
+     * @param colors    optional per-sprite colors for tinting; may be null
+     * @param count     number of sprites to draw
+     * @param mode      blend mode for combining colors with atlas
+     * @param sampling  sampling options for filtering
+     * @param cullRect  optional culling bounds for early rejection; may be null
+     * @param paint     optional paint for additional effects; may be null
+     * @return          this
+     */
+    @NotNull @Contract("_, _, _, _, _, _, _, _, _ -> this")
+    public Canvas drawAtlas(@NotNull Image atlas,
+                            @NotNull float[] xforms,
+                            @NotNull float[] tex,
+                            @Nullable int[] colors,
+                            int count,
+                            @NotNull BlendMode mode,
+                            @NotNull SamplingMode sampling,
+                            @Nullable Rect cullRect,
+                            @Nullable Paint paint) {
+        assert _ptr != 0 : "Canvas is closed";
+        assert atlas != null : "Can't drawAtlas with atlas == null";
+        assert xforms != null : "Can't drawAtlas with xforms == null";
+        assert xforms.length >= count * 4 : "Expected xforms.length >= count * 4, got: " + xforms.length + " < " + (count * 4);
+        assert tex != null : "Can't drawAtlas with tex == null";
+        assert tex.length >= count * 4 : "Expected tex.length >= count * 4, got: " + tex.length + " < " + (count * 4);
+        assert colors == null || colors.length >= count : "Expected colors.length >= count, got: " + colors.length + " < " + count;
+        assert mode != null : "Can't drawAtlas with mode == null";
+        assert sampling != null : "Can't drawAtlas with sampling == null";
+        Stats.onNativeCall();
+        _nDrawAtlas(_ptr,
+                    Native.getPtr(atlas),
+                    xforms,
+                    tex,
+                    colors,
+                    count,
+                    mode.ordinal(),
+                    sampling._pack(),
+                    cullRect == null ? 0 : cullRect._left,
+                    cullRect == null ? 0 : cullRect._top,
+                    cullRect == null ? 0 : cullRect._right,
+                    cullRect == null ? 0 : cullRect._bottom,
+                    cullRect != null,
+                    Native.getPtr(paint));
+        ReferenceUtil.reachabilityFence(atlas);
+        ReferenceUtil.reachabilityFence(paint);
+        return this;
+    }
 
     /**
      * <p>Draws a triangle mesh, using clip and Matrix.</p>
@@ -1497,6 +1563,7 @@ public class Canvas extends Managed {
     public static native void _nDrawString(long ptr, String string, float x, float y, long font, long paint);
     public static native void _nDrawTextBlob(long ptr, long blob, float x, float y, long paint);
     public static native void _nDrawPicture(long ptr, long picturePtr, float[] matrix, long paintPtr);
+    public static native void _nDrawAtlas(long ptr, long atlasPtr, float[] xforms, float[] tex, int[] colors, int count, int blendMode, long samplingMode, float cullLeft, float cullTop, float cullRight, float cullBottom, boolean hasCullRect, long paintPtr);
     public static native void _nDrawVertices(long ptr, int verticesMode, float[] cubics, int[] colors, float[] texCoords, short[] indices, int blendMode, long paintPtr);
     public static native void _nDrawPatch(long ptr, float[] cubics, int[] colors, float[] texCoords, int blendMode, long paintPtr);
     public static native void _nDrawDrawable(long ptr, long drawablePrt, float[] matrix);

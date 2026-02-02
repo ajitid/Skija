@@ -191,6 +191,51 @@ extern "C" JNIEXPORT void JNICALL Java_io_github_humbleui_skija_Canvas__1nDrawPi
     canvas->drawPicture(picture, matrix.get(), paint);
 }
 
+extern "C" JNIEXPORT void JNICALL Java_io_github_humbleui_skija_Canvas__1nDrawAtlas
+  (JNIEnv* env, jclass jclass, jlong canvasPtr, jlong atlasPtr,
+   jfloatArray xformsArr, jfloatArray texArr, jintArray colorsArr, jint count,
+   jint blendMode, jlong samplingMode,
+   jfloat cullLeft, jfloat cullTop, jfloat cullRight, jfloat cullBottom,
+   jboolean hasCullRect, jlong paintPtr) {
+
+    SkCanvas* canvas = reinterpret_cast<SkCanvas*>(static_cast<uintptr_t>(canvasPtr));
+    SkImage* atlas = reinterpret_cast<SkImage*>(static_cast<uintptr_t>(atlasPtr));
+    SkPaint* paint = reinterpret_cast<SkPaint*>(static_cast<uintptr_t>(paintPtr));
+
+    // Get arrays - xforms is 4 floats per sprite (scos, ssin, tx, ty)
+    jfloat* xforms = env->GetFloatArrayElements(xformsArr, 0);
+    jfloat* tex = env->GetFloatArrayElements(texArr, 0);
+    jint* colors = colorsArr ? env->GetIntArrayElements(colorsArr, 0) : nullptr;
+
+    // Build tex rects array (4 floats -> 1 rect per sprite)
+    std::vector<SkRect> texRects(count);
+    for (int i = 0; i < count; i++) {
+        texRects[i] = SkRect::MakeLTRB(tex[i*4], tex[i*4+1], tex[i*4+2], tex[i*4+3]);
+    }
+
+    SkRect cullRect = {cullLeft, cullTop, cullRight, cullBottom};
+
+    // Modern Skia uses SkSpan for arrays
+    SkSpan<const SkRSXform> xformSpan(reinterpret_cast<SkRSXform*>(xforms), count);
+    SkSpan<const SkRect> texSpan(texRects.data(), count);
+    SkSpan<const SkColor> colorSpan(reinterpret_cast<SkColor*>(colors), colors ? count : 0);
+
+    canvas->drawAtlas(
+        atlas,
+        xformSpan,
+        texSpan,
+        colorSpan,
+        static_cast<SkBlendMode>(blendMode),
+        skija::SamplingMode::unpack(samplingMode),
+        hasCullRect ? &cullRect : nullptr,
+        paint
+    );
+
+    if (colors) env->ReleaseIntArrayElements(colorsArr, colors, 0);
+    env->ReleaseFloatArrayElements(texArr, tex, 0);
+    env->ReleaseFloatArrayElements(xformsArr, xforms, 0);
+}
+
 extern "C" JNIEXPORT void JNICALL Java_io_github_humbleui_skija_Canvas__1nDrawVertices
   (JNIEnv* env, jclass jclass, jlong ptr, jint verticesMode, jfloatArray positionsArr, jintArray colorsArr, jfloatArray texCoordsArr, jshortArray indexArr, jint blendMode, jlong paintPtr) {
     SkCanvas* canvas = reinterpret_cast<SkCanvas*>   (static_cast<uintptr_t>(ptr));
