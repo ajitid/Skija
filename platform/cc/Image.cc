@@ -38,6 +38,36 @@ extern "C" JNIEXPORT jlong JNICALL Java_io_github_humbleui_skija_Image__1nAdoptG
     return reinterpret_cast<jlong>(image.release());
 }
 
+#ifdef SK_METAL
+#include "include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
+#include "include/gpu/ganesh/mtl/GrMtlTypes.h"
+
+extern "C" JNIEXPORT jlong JNICALL Java_io_github_humbleui_skija_Image__1nAdoptMetalTextureFrom
+  (JNIEnv* env, jclass jclass, jlong contextPtr, jlong texturePtr, jint width, jint height, jint surfaceOrigin, jint colorType) {
+
+    GrDirectContext* context = reinterpret_cast<GrDirectContext*>(static_cast<uintptr_t>(contextPtr));
+    GrMTLHandle texture = reinterpret_cast<GrMTLHandle>(static_cast<uintptr_t>(texturePtr));
+
+    GrMtlTextureInfo texInfo;
+    texInfo.fTexture.retain(texture);
+
+    GrBackendTexture backendTexture = GrBackendTextures::MakeMtl(
+        width, height,
+        skgpu::Mipmapped::kNo,
+        texInfo
+    );
+
+    sk_sp<SkImage> image = SkImages::AdoptTextureFrom(
+        context,
+        backendTexture,
+        static_cast<GrSurfaceOrigin>(surfaceOrigin),
+        static_cast<SkColorType>(colorType)
+    );
+
+    return reinterpret_cast<jlong>(image.release());
+}
+#endif // SK_METAL
+
 extern "C" JNIEXPORT jlong JNICALL Java_io_github_humbleui_skija_Image__1nMakeRasterFromBytes
   (JNIEnv* env, jclass jclass, jint width, jint height, jint colorType, jint alphaType, jlong colorSpacePtr, jbyteArray bytesArr, jlong rowBytes) {
     SkColorSpace* colorSpace = reinterpret_cast<SkColorSpace*>(static_cast<uintptr_t>(colorSpacePtr));

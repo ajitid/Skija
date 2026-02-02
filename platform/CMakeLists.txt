@@ -30,6 +30,14 @@ file(GLOB SKSG_SOURCES ${CMAKE_SOURCE_DIR}/cc/sksg/*.cc)
 file(GLOB TEST_SOURCES ${CMAKE_SOURCE_DIR}/cc/test/*.cc)
 add_library(skija SHARED ${SOURCES} ${IMPL_SOURCES} ${PARAGRAPH_SOURCES} ${SHAPER_SOURCES} ${SVG_SOURCES} ${RESOURCES_SOURCES} ${SKOTTIE_SOURCES} ${SKSG_SOURCES} ${TEST_SOURCES})
 
+# Objective-C++ sources for macOS Metal support
+if(APPLE)
+    enable_language(OBJC OBJCXX)
+    file(GLOB OBJCXX_SOURCES ${CMAKE_SOURCE_DIR}/cc/*.mm)
+    target_sources(skija PRIVATE ${OBJCXX_SOURCES})
+    target_link_libraries(skija "-framework Metal" "-framework Foundation")
+endif()
+
 # Skia
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(FindSkia)

@@ -60,7 +60,70 @@ public class Image extends RefCnt implements IHasImageInfo {
             ReferenceUtil.reachabilityFence(context);
         }
     }
-        
+
+    /**
+     * <p>Creates Image from an existing Metal texture.</p>
+     *
+     * <p>Image is returned if the texture is valid. Valid texture parameters include:</p>
+     * <ul>
+     * <li>texturePtr is a valid MTLTexture pointer;</li>
+     * <li>width and height are greater than zero;</li>
+     * <li>ColorType and SurfaceOrigin are valid;</li>
+     * </ul>
+     *
+     * @param context       DirectContext
+     * @param texturePtr    Metal texture pointer (MTLTexture)
+     * @param width         width of the texture
+     * @param height        height of the texture
+     * @param surfaceOrigin texture origin (TOP_LEFT for video)
+     * @param colorType     color type (BGRA_8888 for Metal)
+     * @return              Image
+     */
+    public static Image adoptMetalTextureFrom(DirectContext context, long texturePtr, int width, int height, SurfaceOrigin surfaceOrigin, ColorType colorType) {
+        try {
+            Stats.onNativeCall();
+            long ptr = _nAdoptMetalTextureFrom(Native.getPtr(context),
+                                            texturePtr,
+                                            width,
+                                            height,
+                                            surfaceOrigin.ordinal(),
+                                            colorType.ordinal());
+            if (ptr == 0)
+                throw new RuntimeException("Failed to adoptMetalTextureFrom " + texturePtr + " " + width + "x" + height);
+            return new Image(ptr);
+        } finally {
+            ReferenceUtil.reachabilityFence(context);
+        }
+    }
+
+    /**
+     * Convert NV12 (Y + UV) Metal textures to BGRA using GPU compute.
+     * This enables zero-copy video playback from VideoToolbox.
+     *
+     * @param devicePtr   MTLDevice pointer
+     * @param queuePtr    MTLCommandQueue pointer
+     * @param yTexturePtr Y plane texture (R8Unorm, full resolution)
+     * @param uvTexturePtr UV plane texture (RG8Unorm, half resolution)
+     * @param width       Output width
+     * @param height      Output height
+     * @return            BGRA8Unorm MTLTexture pointer (caller must release)
+     */
+    public static long convertYUVToRGBA(long devicePtr, long queuePtr,
+                                         long yTexturePtr, long uvTexturePtr,
+                                         int width, int height) {
+        Stats.onNativeCall();
+        return _nConvertYUVToRGBA(devicePtr, queuePtr, yTexturePtr, uvTexturePtr, width, height);
+    }
+
+    /**
+     * Release a Metal texture created by convertYUVToRGBA.
+     */
+    public static void releaseMetalTexture(long texturePtr) {
+        if (texturePtr != 0) {
+            _nReleaseMetalTexture(texturePtr);
+        }
+    }
+
     /**
      * <p>Creates Image from pixels.</p>
      *
@@ -535,6 +598,7 @@ public class Image extends RefCnt implements IHasImageInfo {
     }
 
     @ApiStatus.Internal public static native long _nAdoptGLTextureFrom(long contextPtr, int textureId, int target, int width, int height, int format, int surfaceOrigin, int colorType);
+    @ApiStatus.Internal public static native long _nAdoptMetalTextureFrom(long contextPtr, long texturePtr, int width, int height, int surfaceOrigin, int colorType);
     @ApiStatus.Internal public static native long _nMakeRasterFromBytes(int width, int height, int colorType, int alphaType, long colorSpacePtr, byte[] pixels, long rowBytes);
     @ApiStatus.Internal public static native long _nMakeRasterFromData(int width, int height, int colorType, int alphaType, long colorSpacePtr, long dataPtr, long rowBytes);
     @ApiStatus.Internal public static native long _nMakeRasterFromBitmap(long bitmapPtr);
@@ -550,4 +614,6 @@ public class Image extends RefCnt implements IHasImageInfo {
     @ApiStatus.Internal public static native boolean _nReadPixelsPixmap(long ptr, long pixmapPtr, int srcX, int srcY, boolean cache);
     @ApiStatus.Internal public static native ImageWithFilterResult _nMakeWithFilter(long srcPtr, long filterPtr, int subsetL, int subsetT, int subsetR, int subsetB, int clipBoundsL, int clipBoundsT, int clipBoundsR, int clipBoundsB);
     @ApiStatus.Internal public static native ImageWithFilterResult _nMakeWithFilterContext(long contextPtr, long srcPtr, long filterPtr, int subsetL, int subsetT, int subsetR, int subsetB, int clipBoundsL, int clipBoundsT, int clipBoundsR, int clipBoundsB);
+    @ApiStatus.Internal public static native long _nConvertYUVToRGBA(long devicePtr, long queuePtr, long yTexturePtr, long uvTexturePtr, int width, int height);
+    @ApiStatus.Internal public static native void _nReleaseMetalTexture(long texturePtr);
 }
