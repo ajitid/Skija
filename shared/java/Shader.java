@@ -151,7 +151,7 @@ public class Shader extends RuntimeEffectChild {
         try {
             assert positions == null || colors.length == positions.length : "colors.length " + colors.length + "!= positions.length " + positions.length;
             Stats.onNativeCall();
-            return new Shader(_nMakeLinearGradientCS(x0, y0, x1, y1, Color4f.flattenArray(colors), Native.getPtr(cs), positions, style.getTileMode().ordinal(), style._getFlags(), style._getMatrixArray()));
+            return new Shader(_nMakeLinearGradientCS(x0, y0, x1, y1, Color4f.flattenArray(colors), Native.getPtr(cs), positions, style.getTileMode().ordinal(), style._getFlags(), style._interpColorSpace, style._interpHueMethod, style._getMatrixArray()));
         } finally {
             ReferenceUtil.reachabilityFence(cs);
         }
@@ -193,7 +193,7 @@ public class Shader extends RuntimeEffectChild {
         try {
             assert positions == null || colors.length == positions.length : "colors.length " + colors.length + "!= positions.length " + positions.length;
             Stats.onNativeCall();
-            return new Shader(_nMakeRadialGradientCS(x, y, r, Color4f.flattenArray(colors), Native.getPtr(cs), positions, style.getTileMode().ordinal(), style._getFlags(), style._getMatrixArray()));
+            return new Shader(_nMakeRadialGradientCS(x, y, r, Color4f.flattenArray(colors), Native.getPtr(cs), positions, style.getTileMode().ordinal(), style._getFlags(), style._interpColorSpace, style._interpHueMethod, style._getMatrixArray()));
         } finally {
             ReferenceUtil.reachabilityFence(cs);
         }
@@ -235,7 +235,7 @@ public class Shader extends RuntimeEffectChild {
         try {
             assert positions == null || colors.length == positions.length : "colors.length " + colors.length + "!= positions.length " + positions.length;
             Stats.onNativeCall();
-            return new Shader(_nMakeTwoPointConicalGradientCS(x0, y0, r0, x1, y1, r1, Color4f.flattenArray(colors), Native.getPtr(cs), positions, style.getTileMode().ordinal(), style._getFlags(), style._getMatrixArray()));
+            return new Shader(_nMakeTwoPointConicalGradientCS(x0, y0, r0, x1, y1, r1, Color4f.flattenArray(colors), Native.getPtr(cs), positions, style.getTileMode().ordinal(), style._getFlags(), style._interpColorSpace, style._interpHueMethod, style._getMatrixArray()));
         } finally {
             ReferenceUtil.reachabilityFence(cs);
         }
@@ -285,7 +285,7 @@ public class Shader extends RuntimeEffectChild {
         try {
             assert positions == null || colors.length == positions.length : "colors.length " + colors.length + "!= positions.length " + positions.length;
             Stats.onNativeCall();
-            return new Shader(_nMakeSweepGradientCS(x, y, startAngle, endAngle, Color4f.flattenArray(colors), Native.getPtr(cs), positions, style.getTileMode().ordinal(), style._getFlags(), style._getMatrixArray()));
+            return new Shader(_nMakeSweepGradientCS(x, y, startAngle, endAngle, Color4f.flattenArray(colors), Native.getPtr(cs), positions, style.getTileMode().ordinal(), style._getFlags(), style._interpColorSpace, style._interpHueMethod, style._getMatrixArray()));
         } finally {
             ReferenceUtil.reachabilityFence(cs);
         }
@@ -395,13 +395,13 @@ public class Shader extends RuntimeEffectChild {
     public static native long _nMakeWithWorkingColorSpace(long ptr, long inputColorSpacePtr, long outputColorSpacePtr);
     public static native long _nMakeWithColorFilter(long ptr, long colorFilterPtr);
     public static native long _nMakeLinearGradient(float x0, float y0, float x1, float y1, int[] colors, float[] positions, int tileType, int flags, float[] matrix);
-    public static native long _nMakeLinearGradientCS(float x0, float y0, float x1, float y1, float[] colors, long colorSpacePtr, float[] positions, int tileType, int flags, float[] matrix);
+    public static native long _nMakeLinearGradientCS(float x0, float y0, float x1, float y1, float[] colors, long colorSpacePtr, float[] positions, int tileType, int flags, int interpColorSpace, int interpHueMethod, float[] matrix);
     public static native long _nMakeRadialGradient(float x, float y, float r, int[] colors, float[] positions, int tileType, int flags, float[] matrix);
-    public static native long _nMakeRadialGradientCS(float x, float y, float r, float[] colors, long colorSpacePtr, float[] positions, int tileType, int flags, float[] matrix);
+    public static native long _nMakeRadialGradientCS(float x, float y, float r, float[] colors, long colorSpacePtr, float[] positions, int tileType, int flags, int interpColorSpace, int interpHueMethod, float[] matrix);
     public static native long _nMakeTwoPointConicalGradient(float x0, float y0, float r0, float x1, float y1, float r1, int[] colors, float[] positions, int tileType, int flags, float[] matrix);
-    public static native long _nMakeTwoPointConicalGradientCS(float x0, float y0, float r0, float x1, float y1, float r1, float[] colors, long colorSpacePtr, float[] positions, int tileType, int flags, float[] matrix);
+    public static native long _nMakeTwoPointConicalGradientCS(float x0, float y0, float r0, float x1, float y1, float r1, float[] colors, long colorSpacePtr, float[] positions, int tileType, int flags, int interpColorSpace, int interpHueMethod, float[] matrix);
     public static native long _nMakeSweepGradient(float x, float y, float startAngle, float endAngle, int[] colors, float[] positions, int tileType, int flags, float[] matrix);
-    public static native long _nMakeSweepGradientCS(float x, float y, float startAngle, float endAngle, float[] colors, long colorSpacePtr, float[] positions, int tileType, int flags, float[] matrix);
+    public static native long _nMakeSweepGradientCS(float x, float y, float startAngle, float endAngle, float[] colors, long colorSpacePtr, float[] positions, int tileType, int flags, int interpColorSpace, int interpHueMethod, float[] matrix);
     public static native long _nMakeFractalNoise(float baseFrequencyX, float baseFrequencyY, int numOctaves, float seed, int tileSizeX, int tileSizeY);
     public static native long _nMakeTurbulence(float baseFrequencyX, float baseFrequencyY, int numOctaves, float seed, int tileSizeX, int tileSizeY);
     public static native long _nMakeEmpty();
